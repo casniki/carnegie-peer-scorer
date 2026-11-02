@@ -29,7 +29,7 @@ Loma Linda University is the default worked example; its badges reflect LLU's pe
 
 ## Status and disclaimer
 
-Independent prototype by Ken Nelson, Office of Educational Effectiveness, Loma Linda University. Not affiliated with, endorsed by, or an official product of ACE, the Carnegie Foundation, or WSCUC. Feedback welcome: wknelson@llu.edu.
+Independent prototype by W. Kenneth Nelson, MD, MS, Office of Educational Effectiveness, Loma Linda University. Not affiliated with, endorsed by, or an official product of ACE, the Carnegie Foundation, or WSCUC. Feedback welcome: wknelson@llu.edu.
 
 ## License
 

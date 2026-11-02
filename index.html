@@ -63,6 +63,13 @@ button.reset:hover{border-color:var(--iris)}
 button.reset:focus-visible{outline:2px solid var(--iris); outline-offset:1px}
 .results h2{font-size:15px; font-weight:700; margin:0}
 .results .meta{color:var(--ink2); font-size:13px; margin:2px 0 14px}
+.tier{padding:13px 16px; margin:0 0 14px; background:var(--panel2); border:1px solid var(--line); border-radius:10px; font-size:13.5px; line-height:1.55}
+.tier b{display:block; font-size:14px; margin-bottom:3px}
+.tier.ok{border-left:4px solid var(--iris)}
+.tier.trig{border-left:4px solid var(--gold)}
+.tier button.reset{margin-top:9px}
+.dimmed{opacity:.45; pointer-events:none}
+.hint{font-size:12px; color:var(--ink2); line-height:1.45; margin:4px 0 10px}
 .toolbar{display:flex; gap:8px; margin:0 0 12px}
 .legend{display:flex; flex-wrap:wrap; gap:14px 20px; font-size:12.5px; color:var(--ink2); margin-bottom:14px}
 .legend .cell{display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:5px; vertical-align:-1px}
@@ -104,7 +111,7 @@ td.score{width:120px}
         <ul id="sugs" hidden></ul>
       </div>
     </section>
-    <section>
+    <section id="secW">
       <h2>Component weights</h2>
       <div id="weights"></div>
       <div class="wsum" id="wsum"></div>
@@ -116,17 +123,20 @@ td.score{width:120px}
       <label class="check"><input type="checkbox" id="fHealth" checked> Cross-family candidates must match the focal institution's health-professions status</label>
       <label class="check" style="margin-bottom:0"><input type="checkbox" id="fFloor" checked> Apply 50-point score floor</label>
     </section>
-    <section>
+    <section id="secN">
       <h2>Group size</h2>
       <div class="nrow"><input type="range" id="topN" min="10" max="30" value="30" style="flex:1"><output id="topNOut">30</output></div>
     </section>
-    <section>
+    <section id="secP">
       <h2>Weight presets</h2>
-      <button class="reset" id="reset" style="margin-bottom:8px; width:100%">Proposal defaults (40/20/15/15/10)</button>
+      <button class="reset" id="reset" style="margin-bottom:2px; width:100%">Proposal defaults (40/20/15/15/10)</button>
+      <p class="hint">Baseline: the hierarchy's own priorities, applied continuously. Run this first.</p>
       <button class="reset" id="presetX" style="width:100%">Cross-classification emphasis (25/20/15/20/20)</button>
+      <p class="hint" style="margin-bottom:0">Diagnostic: for cases where the label is the suspected problem. Peers that survive both presets are the robust ones.</p>
     </section>
   </div>
   <div class="results">
+    <div class="tier" id="tier"></div>
     <h2 id="rTitle"></h2>
     <p class="meta" id="rMeta"></p>
     <div class="toolbar"><button class="reset" id="expCsv">Download CSV</button><button class="reset" id="expCopy">Copy for Excel</button></div>
@@ -141,7 +151,7 @@ td.score{width:120px}
       <tbody id="tbody"></tbody>
     </table>
     <div class="empty" id="empty" hidden>No institutions clear the score floor with these settings. Lower the floor or adjust weights.</div>
-    <p class="note">Adjacency rules: classification, same family (both Special Focus, both Undergraduate/Graduate-Doctorate) or both carrying the Carnegie medical-school flag; control, both private; access &amp; earnings, one of the two axes shared, with any pairing that involves an unclassified institution scored at half credit (missing data is treated as unknown, not as a match); size, one band apart; research, one designation step apart (R1, R2, RCU, none). The eligibility guard admits a candidate with a different classification only when its health-professions status (the Carnegie medical-school flag or a Special Focus health category) matches the focal institution's; within Special Focus, classification adjacency likewise applies only among the health categories, since the Special Focus group spans unrelated fields. Data: 2025 Carnegie Classifications public file, October 2025 release. The KID-eligible roster is the one input this prototype approximates with filters. The associate-level filter follows the chosen focal institution: it switches off automatically when the focal is itself an associate college.</p>
+    <p class="note">Adjacency rules: classification, same family (both Special Focus, both Undergraduate/Graduate-Doctorate) or both carrying the Carnegie medical-school flag; control, both private; access &amp; earnings, one of the two axes shared, with any pairing that involves an unclassified institution scored at half credit (missing data is treated as unknown, not as a match); size, one band apart; research, one designation step apart (R1, R2, RCU, none). The eligibility guard admits a candidate with a different classification only when its health-professions status (the Carnegie medical-school flag or a Special Focus health category) matches the focal institution's; within Special Focus, classification adjacency likewise applies only among the health categories, since the Special Focus group spans unrelated fields. Data: 2025 Carnegie Classifications public file, October 2025 release. The KID-eligible roster is the one input this prototype approximates with filters. Tier 1 above the results is a reconstruction of WSCUC's assignment cascade from the published methodology (Levels 4 to 1, a 10-peer threshold, then a 5-peer re-run of Levels 4 to 2); because some implementation details are unpublished, the official assignment may differ at the margins. Scoring engages automatically only when the reconstructed cascade fails: a pool over 30, a Level 1 landing, or no viable group. The associate-level filter follows the chosen focal institution: it switches off automatically when the focal is itself an associate college.</p>
     <p class="note"><b>About this tool.</b> Built by W. Kenneth Nelson, MD, MS, Office of Educational Effectiveness, Loma Linda University, as a working prototype of similarity-scored peer assignment for hierarchical peer methodologies. Loma Linda University appears as the default worked example; the assigned-pool and approved-addition badges reflect its peer group in WSCUC's Key Indicators Dashboard and illustrate how scored results compare with a negotiated peer list. This is an independent tool and is not affiliated with, endorsed by, or an official product of the American Council on Education, the Carnegie Foundation for the Advancement of Teaching, or the WASC Senior College and University Commission. Source data: 2025 Carnegie Classifications Public Data File (October 10, 2025 release) and 2025 Research Activity Designation Public Data File, carnegieclassifications.acenet.edu. Weights and adjacency rules are policy choices made visible for discussion, not recommendations of any accreditor. Documentation and source: <a href="https://github.com/casniki/carnegie-peer-scorer" style="color:var(--iris)">github.com/casniki/carnegie-peer-scorer</a>.</p>
   </div>
 </main>
@@ -173,6 +183,59 @@ function credit(f, c){
   const rs = f[8]===c[8] ? 1 : (Math.abs(f[8]-c[8])===1 ? .5 : 0);
   return [ic,ct,sa,sz,rs];
 }
+// --- Tier 1: reconstructed WSCUC cascade ---
+// Level 4 = classification+control+SAEC+size+research; L3 drops research; L2 drops size; L1 = classification+control.
+// 10-peer threshold L4 down to L1, then a 5-peer re-run of L4 to L2, per the published methodology.
+function cascade(f){
+  const elig = D.rows.filter(r => r[0]!==f[0] && D.fam[r[3]]!=='A' && D.fam[r[3]]!=='AB');
+  const saEq = (a,b)=> a[6]===b[6] && a[7]===b[7];
+  const match = (r,lvl)=>
+    r[3]===f[3] && r[4]===f[4] &&
+    (lvl<=1 || saEq(r,f)) && (lvl<=2 || r[5]===f[5]) && (lvl<=3 || r[8]===f[8]);
+  // note: lvl 4 uses all five; the (lvl<=k) guards drop components on the way down
+  for(const th of [10,5]){
+    for(let lvl=4; lvl>=(th===10?1:2); lvl--){
+      const g = elig.filter(r=>match(r,lvl));
+      if(g.length>=th){
+        const outcome = g.length>30 ? 'outlier' : (lvl===1 ? 'l1' : 'ok');
+        return {level:lvl, group:g, threshold:th, outcome};
+      }
+    }
+  }
+  return {level:0, group:[], threshold:5, outcome:'none'};
+}
+let casc = null;
+let forcedScoring = false;
+function scoringActive(){ return !casc || casc.outcome!=='ok' || forcedScoring; }
+function renderTier(){
+  const el = document.getElementById('tier');
+  const n = casc ? casc.group.length : 0;
+  const nm = focal[1];
+  let cls='ok', html='';
+  if(casc.outcome==='ok'){
+    if(!forcedScoring){
+      html = '<b>Tier 1: the hierarchy serves this institution</b>The reconstructed cascade assigns '+nm+' at Level '+casc.level+' with '+n+' peers'+(casc.threshold===5?' (5-peer re-run)':'')+'. Scoring is not engaged; the table shows the cascade group. <button class="reset" id="tierBtn">Compare with scored view</button>';
+    } else {
+      html = '<b>Scored view (forced for comparison)</b>The cascade assigns '+nm+' normally at Level '+casc.level+' with '+n+' peers; this scored ranking is shown for comparison only. <button class="reset" id="tierBtn">Back to the cascade group</button>';
+    }
+  } else {
+    cls='trig';
+    const why = casc.outcome==='outlier'
+      ? 'its Level '+casc.level+' pool holds '+n+' institutions, above the 30-peer cap'
+      : casc.outcome==='l1'
+        ? 'it lands at Level 1, matched on classification and control alone ('+n+' institutions)'
+        : 'no level yields even five peers';
+    html = '<b>Tier 2 engaged: the hierarchy fails for this institution</b>Under the reconstructed cascade, '+why+'. Similarity scoring takes over below, per the proposal.';
+  }
+  el.className = 'tier '+cls;
+  el.innerHTML = html;
+  const b = document.getElementById('tierBtn');
+  if(b) b.addEventListener('click', ()=>{ forcedScoring = !forcedScoring; renderTier(); dimPanels(); compute(); });
+}
+function dimPanels(){
+  const dim = !scoringActive();
+  ['secW','secN','secP'].forEach(id=>document.getElementById(id).classList.toggle('dimmed', dim));
+}
 function compute(){
   const sumW = w.reduce((a,b)=>a+b,0) || 1;
   const exAssoc = document.getElementById('fAssoc').checked;
@@ -180,6 +243,11 @@ function compute(){
   const hGuard = document.getElementById('fHealth').checked;
   const floorOn = document.getElementById('fFloor').checked;
   const N = +document.getElementById('topN').value;
+  if(!scoringActive()){
+    const g = casc.group.slice().sort((a,b)=>a[1].localeCompare(b[1]));
+    renderCascade(g);
+    return;
+  }
   const out = [];
   for(const r of D.rows){
     if(r[0]===focal[0]) continue;
@@ -218,11 +286,38 @@ function render(list, total, N){
     tb.appendChild(tr);
   });
 }
+function renderCascade(g){
+  lastList = g.map(r=>({r, cr:credit(focal,r), s:null}));
+  document.getElementById('rTitle').textContent = "Cascade group for "+focal[1]+" (Level "+casc.level+", "+g.length+" peers)";
+  let meta = "Every member matches "+focal[1]+" exactly on the Level "+casc.level+" components. Reconstructed from the published methodology; the official assignment may differ in detail.";
+  const inAdd = g.filter(r=>ADD.has(r[0])).length;
+  if(focal[0]===117636 && inAdd) meta += " "+inAdd+" of LLU's approved additions appear.";
+  document.getElementById('rMeta').textContent = meta;
+  const tb = document.getElementById('tbody');
+  tb.innerHTML = "";
+  document.getElementById('empty').hidden = g.length>0;
+  g.forEach((r,i)=>{
+    const cr = credit(focal,r);
+    const tags = focal[0]===117636 ? (ADD.has(r[0]) ? '<span class="tag add">approved addition</span>' : (POOL.has(r[0]) ? '<span class="tag">assigned pool</span>' : '')) : '';
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="rank">'+(i+1)+'</td>'+
+      '<td class="score"><b style="font-size:12.5px">L'+casc.level+'</b></td>'+
+      '<td class="inst"><b>'+esc(r[1])+'</b>'+tags+'<br><span class="st">'+esc(r[2])+' \u2014 '+esc(D.ics[r[3]])+'</span></td>'+
+      '<td><span class="glyph" title="'+cr.map((c,j)=>WNAMES[j]+": "+(c===1?"full":c?"half":"none")).join("; ")+'">'+
+        cr.map(c=>'<i class="g'+(c===1?2:(c?1:0))+'"></i>').join('')+'</span></td>';
+    tb.appendChild(tr);
+  });
+}
 function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;")}
 function setFocal(r){
   focal = r;
   const fa = D.fam[r[3]];
   document.getElementById('fAssoc').checked = !(fa==='A'||fa==='AB');
+  casc = cascade(r);
+  forcedScoring = false;
+  renderTier();
+  dimPanels();
   document.getElementById('focalLine').innerHTML =
     '<b>'+esc(r[1])+'</b> <span class="dim">('+esc(r[2])+')</span><br>'+
     esc(D.ics[r[3]])+' <span class="dim">,</span> '+CTRL[r[4]]+' <span class="dim">,</span> '+
@@ -295,7 +390,8 @@ function exportRows(){
   const rows = lastList.map((x,i)=>{
     const r = x.r;
     const note = focal[0]===117636 ? (ADD.has(r[0]) ? "Approved addition" : (POOL.has(r[0]) ? "Assigned pool" : "")) : "";
-    return [i+1, x.s.toFixed(1), r[0], r[1], r[2], D.ics[r[3]], CTRL[r[4]], SAEC(r[6],r[7]), SIZE[r[5]], RES[r[8]], ...x.cr.map(lab), note];
+    const scoreCell = x.s===null ? ("Cascade L"+casc.level) : x.s.toFixed(1);
+    return [i+1, scoreCell, r[0], r[1], r[2], D.ics[r[3]], CTRL[r[4]], SAEC(r[6],r[7]), SIZE[r[5]], RES[r[8]], ...x.cr.map(lab), note];
   });
   return {head, rows};
 }
